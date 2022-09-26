@@ -1,18 +1,21 @@
-FROM strimzi/base:latest
+FROM opensuse/leap:15.3
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
-ARG KAFKA_DIST_DIR
-ARG KAFKA_VERSION
-ARG THIRD_PARTY_LIBS
-ARG strimzi_version
+ARG JAVA_VERSION=11
 ARG TARGETPLATFORM
 
-RUN zypper --non-interactive install gettext-tools nmap netcat-openbsd stunnel net-tools unzip hostname findutils tar \
+USER root
+
+RUN zypper refresh \
+    && zypper --non-interactive install java-${JAVA_VERSION}-openjdk openssl shadow curl \
     && zypper cc -a
 
-RUN useradd -r -m -u 1001 -g 0 kafka
+ENV JAVA_HOME /usr/lib/jvm/jre-11
 
-ENV KAFKA_HOME=/opt/kafka
-ENV KAFKA_VERSION=${KAFKA_VERSION}
-ENV STRIMZI_VERSION=${strimzi_version}
+ENV TINI_VERSION v0.19.0
+ENV TINI_SHA256_AMD64=93dcc18adc78c65a028a84799ecf8ad40c936fdfc5f2a57b1acda5a8117fa82c
+
+RUN curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini -o /usr/bin/tini; \
+    echo "${TINI_SHA256_AMD64} */usr/bin/tini" | sha256sum -c; \
+    chmod +x /usr/bin/tini;
